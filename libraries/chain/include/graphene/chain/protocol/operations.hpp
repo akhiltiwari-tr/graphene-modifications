@@ -98,7 +98,8 @@ typedef fc::static_variant<
     fba_distribute_operation, // VIRTUAL
     escrow_transfer_operation,
     escrow_dispute_operation,
-    escrow_release_operation>
+    escrow_release_operation,
+    escrow_approve_operation>
     operation;
 
 /// @} // operations group
@@ -121,9 +122,9 @@ void operation_validate(const operation &op);
     */
 struct op_wrapper
 {
-    public:
-      op_wrapper(const operation &op = operation()) : op(op) {}
-      operation op;
+  public:
+    op_wrapper(const operation &op = operation()) : op(op) {}
+    operation op;
 };
 
 } // namespace chain

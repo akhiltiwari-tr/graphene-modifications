@@ -18,6 +18,10 @@ void escrow_transfer_operation::validate() const
     //FC_ASSERT( fee.symbol == amount.symbol );
     //FC_ASSERT( amount.symbol != VESTS_SYMBOL );
 }
+
+void escrow_approve_operation::validate() const
+{
+}
 void escrow_dispute_operation::validate() const
 {
     //FC_ASSERT( is_valid_account_name( from ) );

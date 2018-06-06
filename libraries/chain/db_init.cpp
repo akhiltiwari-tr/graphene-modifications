@@ -181,6 +181,7 @@ void database::initialize_evaluators()
     register_evaluator<escrow_transfer_evaluator>();
     register_evaluator<escrow_dispute_evaluator>();
     register_evaluator<escrow_release_evaluator>();
+    register_evaluator<escrow_approve_evaluator>();
 }
 
 void database::initialize_indexes()
