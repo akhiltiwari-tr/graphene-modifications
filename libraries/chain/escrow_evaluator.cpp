@@ -67,13 +67,20 @@ object_id_type escrow_release_evaluator::do_apply(const escrow_release_operation
         const auto &e = db().get_escrow(o.from, o.escrow_id);
         FC_ASSERT(e.balance >= o.amount && e.balance.asset_id == o.amount.asset_id);
 
-        if (o.who == e.from)
-            FC_ASSERT(o.to == e.to);
-        else if (o.who == e.to)
-            FC_ASSERT(o.to == e.from);
+        if (e.expiration > db().head_block_time())
+        {
+            if (o.who == e.from)
+                FC_ASSERT(o.to == e.to);
+            else if (o.who == e.to)
+                FC_ASSERT(o.to == e.from);
+            else
+            {
+                FC_ASSERT(e.disputed && o.who == e.agent);
+            }
+        }
         else
         {
-            FC_ASSERT(e.disputed && o.who == e.agent);
+            FC_ASSERT(o.who == e.to || o.who == e.from);
         }
 
         db().adjust_balance(o.to, o.amount);
