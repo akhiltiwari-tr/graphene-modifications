@@ -22,9 +22,9 @@ class escrow_object : public graphene::db::abstract_object<escrow_object>
 
     uint32_t escrow_id; //Number to identify the escrow object.
     // === WHAT SHOULD BE THE DATA TYPE=== //
-    string from;  //ESCROW sender
-    string to;    //ESCROW receiver
-    string agent; // the TRUSTED ESCROW entity
+    account_id_type from;  //ESCROW sender
+    account_id_type to;    //ESCROW receiver
+    account_id_type agent; // the TRUSTED ESCROW entity
     time_point_sec expiration;
     asset balance;         // how many assets to hold on escrow
     bool disputed = false; //dispute flag
@@ -45,15 +45,15 @@ typedef multi_index_container<
         ordered_unique<tag<by_id>, member<object, object_id_type, &object::id>>,
         ordered_unique<tag<by_from_id>,
                        composite_key<escrow_object,
-                                     member<escrow_object, string, &escrow_object::from>,
+                                     member<escrow_object, account_id_type, &escrow_object::from>,
                                      member<escrow_object, uint32_t, &escrow_object::escrow_id>>>,
         ordered_unique<tag<by_to>,
                        composite_key<escrow_object,
-                                     member<escrow_object, string, &escrow_object::to>,
+                                     member<escrow_object, account_id_type, &escrow_object::to>,
                                      member<object, object_id_type, &object::id>>>,
         ordered_unique<tag<by_agent>,
                        composite_key<escrow_object,
-                                     member<escrow_object, string, &escrow_object::agent>,
+                                     member<escrow_object, account_id_type, &escrow_object::agent>,
                                      member<object, object_id_type, &object::id>>>>>
     escrow_object_index_type;
 
