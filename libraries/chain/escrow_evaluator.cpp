@@ -9,15 +9,15 @@ namespace chain
 
 void_result escrow_transfer_evaluator::do_evaluate(const escrow_transfer_operation &o)
 {
+    FC_ASSERT(db().get_balance(o.from, o.amount.asset_id) >= (o.amount + o.fee + o.agent_fee));
+    return void_result();
 }
 
-object_id_type escrow_transfer_evaluator::do_apply(const escrow_transfer_operation &o)
+void_result escrow_transfer_evaluator::do_apply(const escrow_transfer_operation &o)
 {
     try
     {
-        FC_ASSERT(db().get_balance(o.from, o.amount.asset_id) >= (o.amount + o.fee + o.agent_fee));
-
-        if (o.fee.amount > 0)
+        if (o.agent_fee.amount > 0)
         {
             db().adjust_balance(o.from, -o.agent_fee);
             db().adjust_balance(o.agent, o.agent_fee);
@@ -35,26 +35,28 @@ object_id_type escrow_transfer_evaluator::do_apply(const escrow_transfer_operati
             esc.ratification_deadline = o.ratification_deadline;
             esc.escrow_expiration = o.escrow_expiration;
         });
+        return void_result();
     }
     FC_CAPTURE_AND_RETHROW((o))
 }
 
 void_result escrow_approve_evaluator::do_evaluate(const escrow_approve_operation &o)
 {
+    const auto &escrow = db().get_escrow(o.from, o.escrow_id);
+    FC_ASSERT(escrow.to == o.to, "op 'to' does not match escrow 'to'");
+    FC_ASSERT(escrow.agent == o.agent, "op 'agent' does not match escrow 'agent'");
+    return void_result();
 }
 
-object_id_type escrow_approve_evaluator::do_apply(const escrow_approve_operation &o)
+void_result escrow_approve_evaluator::do_apply(const escrow_approve_operation &o)
 {
 
     try
     {
-        //FC_ASSERT( db().has_hardfork( STEEMIT_HARDFORK_0_14__143 ) ); /// TODO: remove this after HF14
-
         const auto &escrow = db().get_escrow(o.from, o.escrow_id);
 
-        FC_ASSERT(escrow.to == o.to, "op 'to' does not match escrow 'to'");
-        FC_ASSERT(escrow.agent == o.agent, "op 'agent' does not match escrow 'agent'");
-
+        // changing this to match.
+        // const auto& escrow = db().get_escrow(o.to, o.escrow_id);
         bool reject_escrow = !o.approve;
 
         if (o.who == o.to)
@@ -103,38 +105,70 @@ object_id_type escrow_approve_evaluator::do_apply(const escrow_approve_operation
                 esc.pending_fee.amount = 0;
             });
         }
+        return void_result();
     }
     FC_CAPTURE_AND_RETHROW((o))
 }
 
 void_result escrow_dispute_evaluator::do_evaluate(const escrow_dispute_operation &o)
 {
+    const auto &escrow = db().get_escrow(o.from, o.escrow_id);
+    FC_ASSERT(!escrow.disputed);
+    FC_ASSERT(escrow.to == o.to);
+
+    return void_result();
 }
 
-object_id_type escrow_dispute_evaluator::do_apply(const escrow_dispute_operation &o)
+void_result escrow_dispute_evaluator::do_apply(const escrow_dispute_operation &o)
 {
     try
     {
         const auto &e = db().get_escrow(o.from, o.escrow_id);
-        FC_ASSERT(!e.disputed);
-        FC_ASSERT(e.to == o.to);
+        // FC_ASSERT(!e.disputed);
+        // FC_ASSERT(e.to == o.to);
 
         db().modify(e, [&](escrow_object &esc) {
             esc.disputed = true;
         });
+        return void_result();
     }
     FC_CAPTURE_AND_RETHROW((o))
 }
 
 void_result escrow_release_evaluator::do_evaluate(const escrow_release_operation &o)
 {
+    const auto &e = db().get_escrow(o.from, o.escrow_id);
+
+    //FC_ASSERT( e.balance >= o.amount && e.balance.asset_id == o.amount.asset_id );
+    FC_ASSERT(e.amount >= o.amount && e.amount.asset_id == o.amount.asset_id);
+
+    /// TODO assert o.amount > 0
+
+    if (e.escrow_expiration > db().head_block_time())
+    {
+        if (o.who == e.from)
+            FC_ASSERT(o.to == e.to);
+        else if (o.who == e.to)
+            FC_ASSERT(o.to == e.from);
+        else
+        {
+            FC_ASSERT(e.disputed && o.who == e.agent);
+        }
+    }
+    else
+    {
+        FC_ASSERT(o.who == e.to || o.who == e.from);
+    }
+    return void_result();
 }
 
-object_id_type escrow_release_evaluator::do_apply(const escrow_release_operation &o)
+void_result escrow_release_evaluator::do_apply(const escrow_release_operation &o)
 {
     try
     {
         const auto &e = db().get_escrow(o.from, o.escrow_id);
+
+        /*
         FC_ASSERT(e.amount >= o.amount && e.amount.asset_id == o.amount.asset_id);
 
         if (e.escrow_expiration > db().head_block_time())
@@ -152,7 +186,7 @@ object_id_type escrow_release_evaluator::do_apply(const escrow_release_operation
         {
             FC_ASSERT(o.who == e.to || o.who == e.from);
         }
-
+*/
         db().adjust_balance(o.to, o.amount);
         if (e.amount == o.amount)
             db().remove(e);
@@ -162,6 +196,7 @@ object_id_type escrow_release_evaluator::do_apply(const escrow_release_operation
                 esc.amount -= o.amount;
             });
         }
+        return void_result();
     }
     FC_CAPTURE_AND_RETHROW((o))
 }
