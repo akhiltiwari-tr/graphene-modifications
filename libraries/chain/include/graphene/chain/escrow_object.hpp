@@ -25,14 +25,14 @@ class escrow_object : public graphene::db::abstract_object<escrow_object>
     account_id_type from;  //ESCROW sender
     account_id_type to;    //ESCROW receiver
     account_id_type agent; // the TRUSTED ESCROW entity
-    time_point_sec expiration;
+    // time_point_sec expiration; ==> not used anywhere
     asset amount; // how many assets to hold on escrow
     time_point_sec ratification_deadline;
     time_point_sec escrow_expiration;
     asset pending_fee;
+    bool disputed = false; //dispute flag
     bool to_approved = false;
     bool agent_approved = false;
-    bool disputed = false; //dispute flag
 
     /*--- COMMENTED FOR NOW --- */
     // bool agent_approved = false; // did agent approve the transaction?
@@ -68,4 +68,4 @@ typedef generic_index<escrow_object, escrow_object_index_type> escrow_index;
 } // namespace graphene
 
 FC_REFLECT_DERIVED(graphene::chain::escrow_object, (graphene::db::object),
-                   (escrow_id)(from)(to)(agent)(ratification_deadline)(escrow_expiration)(pending_fee)(amount)(disputed));
+                   (escrow_id)(from)(to)(agent)(ratification_deadline)(escrow_expiration)(pending_fee)(amount)(disputed)(to_approved)(agent_approved));

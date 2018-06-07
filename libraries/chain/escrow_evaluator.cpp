@@ -137,7 +137,7 @@ object_id_type escrow_release_evaluator::do_apply(const escrow_release_operation
         const auto &e = db().get_escrow(o.from, o.escrow_id);
         FC_ASSERT(e.amount >= o.amount && e.amount.asset_id == o.amount.asset_id);
 
-        if (e.expiration > db().head_block_time())
+        if (e.escrow_expiration > db().head_block_time())
         {
             if (o.who == e.from)
                 FC_ASSERT(o.to == e.to);

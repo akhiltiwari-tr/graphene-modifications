@@ -97,9 +97,9 @@ typedef fc::static_variant<
     asset_claim_fees_operation,
     fba_distribute_operation, // VIRTUAL
     escrow_transfer_operation,
+    escrow_approve_operation,
     escrow_dispute_operation,
-    escrow_release_operation,
-    escrow_approve_operation>
+    escrow_release_operation>
     operation;
 
 /// @} // operations group
