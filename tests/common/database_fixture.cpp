@@ -201,16 +201,6 @@ void database_fixture::verify_asset_supplies(const database &db)
   {
     total_balances[itr->amount.asset_id] += itr->amount.amount;
     total_balances[itr->pending_fee.asset_id] += itr->pending_fee.amount;
-    //total_supply += itr->amount;
-    //total_sbd += itr->sbd_balance;
-    /*
-      if( itr->pending_fee.symbol == STEEM_SYMBOL )
-         total_supply += itr->pending_fee;
-      else if( itr->pending_fee.symbol == SBD_SYMBOL )
-         total_sbd += itr->pending_fee;
-      else
-         FC_ASSERT( false, "found escrow pending fee that is not SBD or STEEM" );
-         */
   }
 
   for (const asset_object &asset_obj : db.get_index_type<asset_index>().indices())
