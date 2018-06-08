@@ -41,13 +41,14 @@ class escrow_object : public graphene::db::abstract_object<escrow_object>
 
 struct by_from_id;
 struct by_ratification_deadline;
+struct by_expiration;
 
 // creating object index
 typedef multi_index_container<
     escrow_object,
     indexed_by<
         ordered_unique<tag<by_id>, member<object, object_id_type, &object::id>>,
-
+        ordered_non_unique<tag<by_expiration>, member<escrow_object, time_point_sec, &escrow_object::escrow_expiration>>,
         ordered_unique<tag<by_from_id>,
                        composite_key<escrow_object,
                                      member<escrow_object, account_id_type, &escrow_object::from>,
