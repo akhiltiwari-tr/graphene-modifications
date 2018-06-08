@@ -37,7 +37,6 @@ struct escrow_transfer_operation : public base_operation
     account_id_type from;
     account_id_type to;
     asset amount;
-    // string memo;
 
     uint32_t escrow_id = 0;
     account_id_type agent;
@@ -93,6 +92,7 @@ struct escrow_dispute_operation : public base_operation
     account_id_type to;
     uint32_t escrow_id;
     account_id_type who;
+    account_id_type agent;
 
     void validate() const;
     void get_required_active_authorities(flat_set<account_id_type> &a) const { a.insert(who); }
@@ -122,7 +122,9 @@ struct escrow_release_operation : public base_operation
     uint32_t escrow_id;
     account_id_type to;  ///< the account that should receive funds (might be from, might be to
     account_id_type who; ///< the account that is attempting to release the funds, determines valid 'to'
-    asset amount;        ///< the amount of funds to release
+    account_id_type agent;
+    account_id_type receiver; //< the account that should receive funds (might be from, might be to)
+    asset amount;             ///< the amount of funds to release
 
     void validate() const;
     void get_required_active_authorities(flat_set<account_id_type> &a) const { a.insert(who); }
@@ -137,7 +139,7 @@ FC_REFLECT(graphene::chain::escrow_approve_operation::fee_parameters_type, (fee)
 FC_REFLECT(graphene::chain::escrow_dispute_operation::fee_parameters_type, (fee))
 FC_REFLECT(graphene::chain::escrow_release_operation::fee_parameters_type, (fee))
 
-FC_REFLECT(graphene::chain::escrow_transfer_operation, (from)(to)(amount)(escrow_id)(agent)(agent_fee)(json_meta)(ratification_deadline)(escrow_expiration));
+FC_REFLECT(graphene::chain::escrow_transfer_operation, (from)(to)(agent)(amount)(escrow_id)(agent_fee)(json_meta)(ratification_deadline)(escrow_expiration));
 FC_REFLECT(graphene::chain::escrow_approve_operation, (from)(to)(agent)(who)(escrow_id)(approve));
-FC_REFLECT(graphene::chain::escrow_dispute_operation, (from)(to)(escrow_id)(who));
-FC_REFLECT(graphene::chain::escrow_release_operation, (from)(to)(escrow_id)(who)(amount));
+FC_REFLECT(graphene::chain::escrow_dispute_operation, (from)(to)(agent)(who)(escrow_id));
+FC_REFLECT(graphene::chain::escrow_release_operation, (from)(to)(agent)(who)(receiver)(escrow_id)(amount));

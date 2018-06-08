@@ -11,6 +11,7 @@ void escrow_transfer_operation::validate() const
 {
     FC_ASSERT(agent_fee.amount >= 0);
     FC_ASSERT(amount.amount >= 0);
+    FC_ASSERT(from != to);
     FC_ASSERT(from != agent && to != agent);
     FC_ASSERT(agent_fee.asset_id == amount.asset_id); // agent fee; only in bts
     FC_ASSERT(amount.asset_id == asset_id_type());    // only bts is allowed for now.
@@ -26,7 +27,8 @@ void escrow_dispute_operation::validate() const
 }
 void escrow_release_operation::validate() const
 {
-    FC_ASSERT(who != to);
+    FC_ASSERT(who == from || who == to || who == agent, "who must be from or to or agent");
+    FC_ASSERT(receiver == from || receiver == to, "receiver must be from or to");
     FC_ASSERT(amount.amount >= 0);
     FC_ASSERT(amount.asset_id == asset_id_type()); // only bts is allowed for now
 }

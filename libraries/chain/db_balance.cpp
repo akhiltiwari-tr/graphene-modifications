@@ -23,7 +23,6 @@
  */
 
 #include <graphene/chain/database.hpp>
-
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/asset_object.hpp>
 #include <graphene/chain/vesting_balance_object.hpp>

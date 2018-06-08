@@ -9,6 +9,8 @@ namespace chain
 
 void_result escrow_transfer_evaluator::do_evaluate(const escrow_transfer_operation &o)
 {
+    FC_ASSERT(o.ratification_deadline > db().head_block_time());
+    FC_ASSERT(o.escrow_expiration > db().head_block_time());
     FC_ASSERT(db().get_balance(o.from, o.amount.asset_id) >= (o.amount + o.fee + o.agent_fee));
     return void_result();
 }
@@ -45,6 +47,7 @@ void_result escrow_approve_evaluator::do_evaluate(const escrow_approve_operation
     const auto &escrow = db().get_escrow(o.from, o.escrow_id);
     FC_ASSERT(escrow.to == o.to, "op 'to' does not match escrow 'to'");
     FC_ASSERT(escrow.agent == o.agent, "op 'agent' does not match escrow 'agent'");
+    FC_ASSERT(escrow.ratification_deadline >= db().head_block_time(), "escrow ratification deadline is before head block time");
     return void_result();
 }
 
@@ -88,9 +91,6 @@ void_result escrow_approve_evaluator::do_apply(const escrow_approve_operation &o
 
         if (reject_escrow)
         {
-            //const auto& from_account = db().get_account( o.from );
-            //db().adjust_balance( from_account, escrow.steem_balance );
-            //db().adjust_balance( from_account, escrow.sbd_balance );
             db().adjust_balance(o.from, escrow.amount);
             db().adjust_balance(o.from, escrow.pending_fee);
 
@@ -98,9 +98,7 @@ void_result escrow_approve_evaluator::do_apply(const escrow_approve_operation &o
         }
         else if (escrow.to_approved && escrow.agent_approved)
         {
-            //const auto& agent_account = db().get_account( o.agent );
             db().adjust_balance(o.agent, escrow.pending_fee);
-
             db().modify(escrow, [&](escrow_object &esc) {
                 esc.pending_fee.amount = 0;
             });
@@ -112,10 +110,11 @@ void_result escrow_approve_evaluator::do_apply(const escrow_approve_operation &o
 
 void_result escrow_dispute_evaluator::do_evaluate(const escrow_dispute_operation &o)
 {
-    const auto &escrow = db().get_escrow(o.from, o.escrow_id);
-    FC_ASSERT(!escrow.disputed);
-    FC_ASSERT(escrow.to == o.to);
-
+    const auto &e = db().get_escrow(o.from, o.escrow_id);
+    FC_ASSERT(e.to_approved && e.agent_approved, "escrow must be approved by all parties before a dispute can be raised");
+    FC_ASSERT(!e.disputed, "escrow is already under dispute");
+    FC_ASSERT(e.to == o.to, "op 'to' does not match escrow 'to'");
+    FC_ASSERT(e.agent == o.agent, "op 'agent' does not match escrow 'agent'");
     return void_result();
 }
 
@@ -124,8 +123,6 @@ void_result escrow_dispute_evaluator::do_apply(const escrow_dispute_operation &o
     try
     {
         const auto &e = db().get_escrow(o.from, o.escrow_id);
-        // FC_ASSERT(!e.disputed);
-        // FC_ASSERT(e.to == o.to);
 
         db().modify(e, [&](escrow_object &esc) {
             esc.disputed = true;
@@ -139,26 +136,39 @@ void_result escrow_release_evaluator::do_evaluate(const escrow_release_operation
 {
     const auto &e = db().get_escrow(o.from, o.escrow_id);
 
-    //FC_ASSERT( e.balance >= o.amount && e.balance.asset_id == o.amount.asset_id );
     FC_ASSERT(e.amount >= o.amount && e.amount.asset_id == o.amount.asset_id);
 
-    /// TODO assert o.amount > 0
+    FC_ASSERT(o.amount.amount > 0 && e.amount.amount > 0);
 
-    if (e.escrow_expiration > db().head_block_time())
+    FC_ASSERT(e.to == o.to, "op 'to' does not match escrow 'to'");
+    FC_ASSERT(e.agent == o.agent, "op 'agent' does not match escrow 'agent'");
+    FC_ASSERT(o.receiver == e.from || o.receiver == e.to, "Funds must be released to 'from' or 'to'");
+
+    FC_ASSERT(e.to_approved && e.agent_approved, "Funds cannot be released prior to escrow approval.");
+
+    // If there is a dispute regardless of expiration, the agent can release funds to either party
+    if (e.disputed)
     {
-        if (o.who == e.from)
-            FC_ASSERT(o.to == e.to);
-        else if (o.who == e.to)
-            FC_ASSERT(o.to == e.from);
-        else
-        {
-            FC_ASSERT(e.disputed && o.who == e.agent);
-        }
+        FC_ASSERT(o.who == e.agent, "'agent' must release funds for a disputed escrow");
     }
     else
     {
-        FC_ASSERT(o.who == e.to || o.who == e.from);
+        FC_ASSERT(o.who == e.from || o.who == e.to, "Only 'from' and 'to' can release from a non-disputed escrow");
+
+        if (e.escrow_expiration > db().head_block_time())
+        {
+            // If there is no dispute and escrow has not expired, either party can release funds to the other.
+            if (o.who == e.from)
+            {
+                FC_ASSERT(o.receiver == e.to, "'from' must release funds to 'to'");
+            }
+            else if (o.who == e.to)
+            {
+                FC_ASSERT(o.receiver == e.from, "'to' must release funds to 'from'");
+            }
+        }
     }
+
     return void_result();
 }
 
@@ -166,36 +176,20 @@ void_result escrow_release_evaluator::do_apply(const escrow_release_operation &o
 {
     try
     {
+        //FC_ASSERT( db().has_hardfork( STEEMIT_HARDFORK_0_9 ) ); /// TODO: remove this after HF9
+
         const auto &e = db().get_escrow(o.from, o.escrow_id);
 
-        /*
-        FC_ASSERT(e.amount >= o.amount && e.amount.asset_id == o.amount.asset_id);
+        db().adjust_balance(o.receiver, o.amount);
+        db().modify(e, [&](escrow_object &esc) {
+            esc.amount -= o.amount;
+        });
 
-        if (e.escrow_expiration > db().head_block_time())
+        if (e.amount.amount == 0)
         {
-            if (o.who == e.from)
-                FC_ASSERT(o.to == e.to);
-            else if (o.who == e.to)
-                FC_ASSERT(o.to == e.from);
-            else
-            {
-                FC_ASSERT(e.disputed && o.who == e.agent);
-            }
-        }
-        else
-        {
-            FC_ASSERT(o.who == e.to || o.who == e.from);
-        }
-*/
-        db().adjust_balance(o.to, o.amount);
-        if (e.amount == o.amount)
             db().remove(e);
-        else
-        {
-            db().modify(e, [&](escrow_object &esc) {
-                esc.amount -= o.amount;
-            });
         }
+
         return void_result();
     }
     FC_CAPTURE_AND_RETHROW((o))
