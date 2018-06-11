@@ -29,6 +29,8 @@ class escrow_object : public graphene::db::abstract_object<escrow_object>
     account_id_type to;    //ESCROW receiver
     account_id_type agent; // the TRUSTED ESCROW entity
     asset amount;          // how many assets to hold on escrow
+
+    /* comment out below  peice of code to simplify escrow*/
     time_point_sec ratification_deadline;
     time_point_sec escrow_expiration;
     asset pending_fee;
