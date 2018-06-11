@@ -57,9 +57,9 @@ BOOST_AUTO_TEST_CASE(escrow_transfer)
 {
     try
     {
-        generate_blocks(HARDFORK_ESCROW_TIME);
+        // generate_blocks(HARDFORK_ESCROW_TIME);
         generate_block();
-        set_expiration(db, trx);
+        // set_expiration(db, trx);
 
         ACTORS((alice)(bob)(sam));
 
@@ -193,9 +193,9 @@ BOOST_AUTO_TEST_CASE(escrow_dispute)
 {
     try
     {
-        generate_blocks(HARDFORK_ESCROW_TIME);
+        // generate_blocks(HARDFORK_ESCROW_TIME);
         generate_block();
-        set_expiration(db, trx);
+        // set_expiration(db, trx);
 
         ACTORS((alice)(bob)(sam));
 
@@ -325,9 +325,9 @@ BOOST_AUTO_TEST_CASE(escrow_expire)
 {
     try
     {
-        generate_blocks(HARDFORK_ESCROW_TIME);
+        // generate_blocks(HARDFORK_ESCROW_TIME);
         generate_block();
-        set_expiration(db, trx);
+        // set_expiration(db, trx);
 
         ACTORS((alice)(bob)(sam));
 
@@ -443,9 +443,9 @@ BOOST_AUTO_TEST_CASE(escrow_validations)
 {
     try
     {
-        generate_blocks(HARDFORK_ESCROW_TIME);
+        // generate_blocks(HARDFORK_ESCROW_TIME);
         generate_block();
-        set_expiration(db, trx);
+        // set_expiration(db, trx);
 
         ACTORS((alice)(bob)(sam)(paul));
 
@@ -1066,9 +1066,8 @@ BOOST_AUTO_TEST_CASE(escrow_authorities)
 {
     try
     {
-        generate_blocks(HARDFORK_ESCROW_TIME);
         generate_block();
-        set_expiration(db, trx);
+        ;
 
         ACTORS((alice)(bob)(sam));
         const auto &core = asset_id_type()(db);
@@ -1130,9 +1129,7 @@ BOOST_AUTO_TEST_CASE(escrow_expire_auto)
 {
     try
     {
-        generate_blocks(HARDFORK_ESCROW_TIME);
         generate_block();
-        set_expiration(db, trx);
 
         ACTORS((alice)(bob)(sam));
         const auto &core = asset_id_type()(db);
@@ -1187,9 +1184,7 @@ BOOST_AUTO_TEST_CASE(escrow_api)
 
         graphene::app::escrow_api escrow_api(db);
 
-        generate_blocks(HARDFORK_ESCROW_TIME);
         generate_block();
-        set_expiration(db, trx);
 
         ACTORS((alice)(bob)(sam));
 
